@@ -1,22 +1,28 @@
 import os
-from supabase import create_client
 from dotenv import load_dotenv
+from supabase import create_client
 
-load_dotenv()
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 
-supabase = create_client(
-    os.getenv("SUPABASE_URL"),
-    os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-)
+def get_supabase_client():
+    url = os.getenv("SUPABASE_URL")
+    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-BUCKET = "canaco"
+    if not url or not key:
+        raise RuntimeError("Variables de entorno de Supabase no cargadas")
 
-def upload_file(local_path, remote_path):
+    return create_client(url, key)
+
+
+def upload_file(local_path: str, remote_path: str) -> str:
+    supabase = get_supabase_client()
+
     with open(local_path, "rb") as f:
-        supabase.storage.from_(BUCKET).upload(
-            remote_path,
-            f,
-            {"content-type": "image/webp"}
+        supabase.storage.from_("canaco").upload(
+            path=remote_path,
+            file=f,
+            file_options={"content-type": "image/webp"}
         )
 
-    return supabase.storage.from_(BUCKET).get_public_url(remote_path)
+    public_url = supabase.storage.from_("canaco").get_public_url(remote_path)
+    return public_url

@@ -1,7 +1,7 @@
 import requests
 import tempfile
 
-def download_from_url(url):
+def download_file(url, output_path):
     r = requests.get(url, timeout=30)
     r.raise_for_status()
 

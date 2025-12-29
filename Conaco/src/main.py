@@ -5,7 +5,7 @@ import os
 
 SIGNED_URL = "https://gmyzmyiwpoeteoogleoq.supabase.co/storage/v1/object/sign/canaco/branch/1130cc7f-2479-4993-bec2-5276ab2967f3.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV85ODcyYTI3OC00MGJkLTQwMWItOTY1My04NzVhMzliYWMwZWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYW5hY28vYnJhbmNoLzExMzBjYzdmLTI0NzktNDk5My1iZWMyLTUyNzZhYjI5NjdmMy5qcGciLCJpYXQiOjE3NjY5NTA0NDEsImV4cCI6MTc2NzAzNjg0MX0.Ik9CF_sXCSFQEq-VSJGhdPg5y0RCXHRp7JhKSNg4jZo&download="
 FILE_TYPE = "ComprobanteDomiciliario"
-#sa
+
 TMP_PATH = "/tmp/imagen_original.jpg"
 print("INICIO DEL SCRIPT")
 
