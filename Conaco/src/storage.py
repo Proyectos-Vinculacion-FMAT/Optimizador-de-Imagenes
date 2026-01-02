@@ -1,15 +1,25 @@
-from supabase import create_client
 import os
+from supabase import create_client
 
-supabase = create_client(
-    os.getenv("SUPABASE_URL"),
-    os.getenv("SUPABASE_SERVICE_KEY")
-)
 
-def upload_to_supabase(local_path, remote_path):
+def get_supabase_client():
+    url = os.getenv("SUPABASE_URL")
+    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+    if not url or not key:
+        raise RuntimeError("Variables de entorno de Supabase no configuradas")
+
+    return create_client(url, key)
+
+
+def upload_file(local_path: str, remote_path: str) -> str:
+    supabase = get_supabase_client()
+
     with open(local_path, "rb") as f:
-        supabase.storage.from_("canaco").upload(remote_path, f)
+        supabase.storage.from_("canaco").upload(
+            path=remote_path,
+            file=f,
+            file_options={"content-type": "image/webp"}
+        )
 
-def get_public_url(remote_path):
-    res = supabase.storage.from_("canaco").get_public_url(remote_path)
-    return res["publicUrl"]
+    return supabase.storage.from_("canaco").get_public_url(remote_path)

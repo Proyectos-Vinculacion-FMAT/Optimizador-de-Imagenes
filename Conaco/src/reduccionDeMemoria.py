@@ -1,12 +1,6 @@
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from pdf2image import convert_from_path
 import os
-
-def size(p):
-    try:
-        return os.path.getsize(p)
-    except OSError:
-        return 0
 
 
 def resolve_storage_path(file_type: str) -> str:
@@ -22,17 +16,21 @@ def resolve_storage_path(file_type: str) -> str:
     return paths[file_type]
 
 
-def process(path):
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"No existe la ruta: {path}")
+def _is_pdf(path: str) -> bool:
+    with open(path, "rb") as f:
+        return f.read(4) == b"%PDF"
 
-    ext = path.lower().split('.')[-1]
+
+def process(path: str) -> list[str]:
+    if not os.path.exists(path):
+        raise FileNotFoundError("Archivo no encontrado")
+
     carpeta = os.path.dirname(path) or os.getcwd()
     nombre_base = os.path.splitext(os.path.basename(path))[0]
 
     final_paths = []
 
-    if ext == "pdf":
+    if _is_pdf(path):
         pages = convert_from_path(path)
 
         for i, page in enumerate(pages):
@@ -43,19 +41,21 @@ def process(path):
                     f"{nombre_base}_page{i+1}"
                 )
             )
-        return final_paths
-
-    elif ext in ["jpg", "jpeg"]:
-        img = Image.open(path)
-        return [_process_image(img, carpeta, nombre_base)]
 
     else:
-        raise ValueError("Formato no permitido")
+        try:
+            img = Image.open(path)
+        except UnidentifiedImageError:
+            raise ValueError("El archivo no es una imagen valida ni PDF")
+
+        final_paths.append(
+            _process_image(img, carpeta, nombre_base)
+        )
+
+    return final_paths
 
 
-def _process_image(img, carpeta, nombre_base):
-    original_size = img.size
-
+def _process_image(img: Image.Image, carpeta: str, nombre_base: str) -> str:
     img_small = img.resize(
         (max(1, img.width // 2), max(1, img.height // 2))
     )
