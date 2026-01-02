@@ -1,34 +1,46 @@
+from flask import Flask, request, jsonify
 from download import download_file
 from reduccionDeMemoria import process, resolve_storage_path
 from upload import upload_file
 import os
+import uuid
 
-SIGNED_URL = "https://gmyzmyiwpoeteoogleoq.supabase.co/storage/v1/object/sign/canaco/branch/1130cc7f-2479-4993-bec2-5276ab2967f3.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV85ODcyYTI3OC00MGJkLTQwMWItOTY1My04NzVhMzliYWMwZWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjYW5hY28vYnJhbmNoLzExMzBjYzdmLTI0NzktNDk5My1iZWMyLTUyNzZhYjI5NjdmMy5qcGciLCJpYXQiOjE3NjY5NTA0NDEsImV4cCI6MTc2NzAzNjg0MX0.Ik9CF_sXCSFQEq-VSJGhdPg5y0RCXHRp7JhKSNg4jZo&download="
-FILE_TYPE = "ComprobanteDomiciliario"
+app = Flask(__name__)
 
-TMP_PATH = "/tmp/imagen_original.jpg"
-print("INICIO DEL SCRIPT")
+@app.route("/optimize", methods=["POST"])
+def optimize():
+    data = request.get_json(force=True)
 
-def pipeline():
-    print("Pipeline iniciado")
+    signed_url = data.get("signed_url")
+    file_type = data.get("file_type")
 
-    # 1. Descargar desde signed URL
-    input_path = download_file(SIGNED_URL, TMP_PATH)
+    if not signed_url or not file_type:
+        return jsonify({"error": "signed_url y file_type son requeridos"}), 400
 
-    # 2. Reducir memoria (NO se toca la logica interna)
-    final_path = process(input_path)
+    tmp_input = f"/tmp/{uuid.uuid4()}.jpg"
 
-    # 3. Resolver path segun tipo
-    storage_path = resolve_storage_path(FILE_TYPE)
+    try:
+        # 1. Descargar
+        input_path = download_file(signed_url, tmp_input)
 
-    # 4. Subir a Supabase
-    public_url = upload_file(
-        local_path=final_path,
-        remote_path=f"{storage_path}{os.path.basename(final_path)}"
-    )
+        # 2. Optimizar
+        final_path = process(input_path)
 
-    return public_url
+        # 3. Resolver path
+        storage_path = resolve_storage_path(file_type)
+
+        # 4. Subir a Supabase
+        public_url = upload_file(
+            local_path=final_path,
+            remote_path=f"{storage_path}{os.path.basename(final_path)}"
+        )
+
+        return jsonify({"public_url": public_url})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
+# Cloud Run espera esto
 if __name__ == "__main__":
-    print(pipeline())
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
